@@ -1,0 +1,73 @@
+spring:
+  main:
+    banner-mode: off
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5434/postgres
+    username: postgres
+    password: postgres
+  jpa:
+    properties:
+      hibernate:
+        show_sql: true
+        hbm2ddl:
+          auto: create
+  kafka:
+
+    topic: topic1
+    bootstrap-servers: ${KAFKA_BOOTSTRAP-SERVERS:localhost:29092}
+    producer:
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      transaction-id-prefix: transfer-service-${random.value}-
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        delivery:
+          timeout:
+            ms: 120000
+        linger:
+          ms: 0
+        request:
+          timeout:
+            ms: 30000
+        transaction:
+          state:
+            log:
+              min:
+                isr: 1
+        max:
+          in:
+            flight:
+              requests:
+                per:
+                  connection: 5
+        enable:
+          idempotence: true
+    consumer:
+      group-id: dimatch
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: com.example.*
+      isolation-level: READ_COMMITTED
+
+
+logging:
+  level:
+    org:
+      apache:
+        kafka:
+          clients:
+            producer:
+              internals:
+                TransactionManager: DEBUG
+      springframework:
+        orm:
+          jpa:
+            JpaTransactionManager: DEBUG
+        transaction: TRACE
+        kafka:
+          transaction:
+            kafkaAwareTransactionManager: TRACE
